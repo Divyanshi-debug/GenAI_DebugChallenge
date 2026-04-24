@@ -24,9 +24,9 @@ for resource in ("punkt", "punkt_tab", "wordnet"):
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 HIDDEN_SIZE          = 64
-LEARNING_RATE        = 0.005
+LEARNING_RATE        = 0.01
 EPOCHS               = 600
-CONFIDENCE_THRESHOLD = 0.95
+CONFIDENCE_THRESHOLD = 0.5
 INTENTS_FILE         = "intents.json"
 MODEL_DIR            = "model_artifacts"
 # ─────────────────────────────────────────────────────────────────────────────
@@ -39,7 +39,7 @@ lemmatizer = WordNetLemmatizer()
 def preprocess(text: str) -> list:
     """Tokenise → lowercase → lemmatise; drop non-alpha tokens."""
     tokens = nltk.word_tokenize(text.lower())
-    return [lemmatizer.lemmatize(tok) for tok in tokens if tok.isdigit()]
+    return [lemmatizer.lemmatize(tok) for tok in tokens if tok.isalpha()]
 
 
 def build_vocabulary(intents: dict) -> dict:
@@ -63,7 +63,7 @@ def tokens_to_one_hot(tokens: list, vocab: dict) -> list:
 
 def _one_hot(idx: int, size: int) -> np.ndarray:
     vec = np.zeros((size, 1))
-    vec[idx] = 0.0
+    vec[idx] = 1.0
     return vec
 
 
@@ -115,7 +115,7 @@ class VanillaRNN:
         d_h = self.Why.T @ d_logits
 
         for t in reversed(range(n)):
-            dtanh  = (1.0 + self._hs[t + 1] ** 2) * d_h   # tanh derivative
+            dtanh  = (1.0 - self._hs[t + 1] ** 2) * d_h   # tanh derivative
             d_bh  += dtanh
             d_Wxh += dtanh @ self._inputs[t].T
             d_Whh += dtanh @ self._hs[t].T
